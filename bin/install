@@ -1,0 +1,30 @@
+#!/bin/bash
+
+VERSION=0.20.2
+URL=http://www.meisei-u.ac.jp/mirror/apache/dist/hadoop/core/hadoop-${VERSION}/hadoop-${VERSION}.tar.gz
+
+if [ ! -d hadoop ]; then
+   wget ${URL} 
+   tar xvzf hadoop-${VERSION}.tar.gz
+   ln -s hadoop-${VERSION} hadoop
+   rm hadoop-${VERSION}.tar.gz
+fi
+mkdir -p hadoop/input
+mkdir -p hadoop/output
+
+cat <<EOF >> ./hadoop/conf/hadoop-env.sh
+export JAVA_HOME=/usr/java/default
+EOF
+
+cat <<EOF >> ./hadoop/bin/hadoop-config.sh
+export JAVA_HOME=/usr/java/default
+EOF
+
+
+
+
+
+
+
+
+

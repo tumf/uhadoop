@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+require 'unit_hosting'
+
+group = UnitHosting::VmGroup.load('tumf-sg-13')
+vms = group.vms
+# サーバのclone
+begin
+  size = 0
+  begin
+    group.vms.each do |instance_id,vm|
+      if vm.display_name == "slave-cluster"
+        pp vm.status?
+        vm.power_off if vm.status? == "running"
+        vm.destroy if vm.status? == "halted"
+        size += 1
+      end
+    end
+  rescue
+  end
+  sleep 5 if size > 0
+end while(size > 0)
+  

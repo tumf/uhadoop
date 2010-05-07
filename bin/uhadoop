@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+
+=begin
+Usage: uhadoop [-c <num>] <server-group>
+uhadoop -c 10 tumf-sg-13
+=end
+
+HADOOP_VERSION="0.20.2"
+
+system("./bin/deploy")
+
+# 分散ファイルシステムを初期化
+# bin/hadoop namenode -format 
+# bin/hadoop fs -put data data
+# bin/start-all.sh # デーモンを起動
+system("./bin/hadoop " <<
+       " jar contrib/streaming/hadoop-#{HADOOP_VERSION}-streaming.jar" <<
+       " -input input -output output" <<
+       " -mapper './bin/mapper'" <<
+       " -reducer './bin/reducer'")
+
+system("./bin/hadoop fs -cat output/*")
+

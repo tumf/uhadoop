@@ -1,0 +1,15 @@
+#!/bin/bash
+
+slave=$1
+echo $slave
+
+dir=/home/hadoop/hadoop
+
+dest=${slave}:${dir}
+rsync_options="--exclude-from=./bin/rsync_exclude.txt -avzC -c --force --delete -e ssh"
+
+rsync $rsync_options ./ $dest
+ssh $slave "cp -v ${dir}/bin/ssh_config.txt /home/hadoop/.ssh/config"
+ssh  $slave "sudo hostname ${slave}"
+ssh  $slave "sudo cp -v ${dir}/bin/hosts /etc/hosts"
+ssh  $slave "sudo sh ${dir}/bin/iptables"

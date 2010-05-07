@@ -1,0 +1,216 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+require 'unit_hosting'
+
+use_clusters = 8
+
+def exec cmd
+  puts cmd
+  system(cmd)
+end
+
+
+class ClusterManger
+  attr_reader :nodes, :master, :slave, :clusters, :slaves, :group
+  def clear_vars
+    @nodes = nil
+    @master = nil
+    @slave = nil
+    @clusters = Array.new
+    @slaves = Array.new
+  end
+  def initialize server_group
+    @group = UnitHosting::VmGroup.load(server_group)
+    update
+  end
+  def update
+    @vms = @group.vms
+    clear_vars
+    @vms.each do |instance_id,vm|
+      @master = vm if vm.display_name == "master"
+      @slave = vm if vm.display_name == "slave"
+      @clusters << vm if vm.display_name == "slave-cluster"
+    end
+    @slaves = @clusters.clone
+    @slaves << slave
+    @nodes = @slaves.clone
+    @nodes << @master
+  end
+end
+
+$stdout.sync=(true) if not $stdout.sync
+
+c = ClusterManger.new('tumf-sg-13')
+puts "use %d clusters"  % use_clusters
+puts "found %d clusters..." % c.slaves.length
+
+if c.slaves.length < use_clusters
+  print "setup %d clusters" % (use_clusters - c.slaves.length)
+  (use_clusters - c.slaves.length).times do
+    putc "."
+    c.slave.replicate("slave-cluster")
+  end
+  puts "done"
+  c.update
+end
+
+# wait ready for servers
+print "waiting for servers responses."
+running = Array.new
+while running.length != c.nodes.length
+  sleep 1
+  putc "."
+  c.nodes.each do |vm|
+    unless running.include?(vm.instance_id)
+      break unless vm.ipInfo?.length > 0 
+      system("ssh hadoop@%s ssh hadoop@%s ls >/dev/null 2>&1" %
+             [c.master.ipInfo?[0]["route_to"], vm.ipInfo?[0]["ip"]])
+      break  unless $? == 0
+      running << vm.instance_id
+    end
+  end
+end
+puts "done"
+
+# view status
+puts " master: %s" % c.master.instance_id
+puts " slave: %s" % c.slave.instance_id
+c.clusters.each do |vm|
+  puts " slave-cluster: %s" % vm.instance_id
+end
+
+
+
+# deploy-slavesへの書き込み
+puts "puts ./bin/deploy-slaves"
+  File.open("./bin/deploy-slaves","w") do |f|
+  f.puts "#!/bin/sh"
+  c.slaves.each do |vm|
+    f.puts "./bin/deploy-slave %s" % vm.instance_id 
+  end
+end
+
+# slavesへの書き込み
+puts "puts ./hadoop/conf/slaves"
+File.open("./hadoop/conf/slaves","w") do |f|
+  c.slaves.each do |vm|
+    f.puts vm.instance_id 
+  end
+end
+
+# mastersへの書き込み
+puts "puts ./hadoop/conf/masters"
+File.open("./hadoop/conf/masters","w") do |f|
+  f.puts c.master.instance_id 
+end
+
+# 
+puts "puts ./bin/hosts"
+File.open("./bin/hosts","w") do |f|
+  f.puts "127.0.0.1 localhost"
+  f.puts "%s %s" % [c.master.ipInfo?[0]["ip"] , c.master.instance_id]
+  c.slaves.each do |vm|
+    f.puts "%s %s" % [vm.ipInfo?[0]["ip"] , vm.instance_id]
+  end
+end
+
+# ./bin/iptables
+puts "puts ./bin/iptables"
+File.open("./bin/iptables","w") do |f|
+  f.puts "/sbin/iptables -F HADOOP"
+  f.puts("/sbin/iptables -A HADOOP -s %s -j ACCEPT" % c.master.ipInfo?[0]["ip"])
+  c.slaves.each do |vm|
+    f.puts("/sbin/iptables -A HADOOP -s %s -j ACCEPT" % vm.ipInfo?[0]["ip"])
+  end
+  f.puts("/sbin/iptables -A HADOOP -j RETURN")
+end
+
+
+
+# /home/hadoop/.ssh/config
+puts "puts ./bin/ssh_config.txt"
+File.open("./bin/ssh_config.txt","w") do |f|
+  f.puts "Host *"
+  f.puts "  StrictHostKeyChecking no"
+  f.puts "Host %s namenode" % c.master.instance_id
+  f.puts "  User hadoop"
+  f.puts "  HostName %s" % c.master.ipInfo?[0]["ip"]
+
+  c.slaves.each do |vm|
+    f.puts "Host *"
+    f.puts "  StrictHostKeyChecking no"
+    f.puts "Host %s" % vm.instance_id
+    f.puts "  User hadoop"
+    f.puts "  HostName %s" % vm.ipInfo?[0]["ip"]
+  end
+end
+
+puts "puts ./hadoop/conf/core-site.xml"
+File.open("./hadoop/conf/core-site.xml","w") do |f|
+  f.puts <<EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+ <property>
+   <name>fs.default.name</name>
+   <value>hdfs://#{c.master.instance_id}:9000/</value>
+ </property>
+</configuration>
+EOF
+end
+
+puts "puts ./hadoop/conf/hdfs-site.xml"
+File.open("./hadoop/conf/hdfs-site.xml","w") do |f|
+  f.puts <<EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+ <property>
+   <name>dfs.replication</name>
+   <value>1</value>
+ </property>
+</configuration>
+EOF
+end
+
+puts "puts ./hadoop/conf/mapred-site.xml"
+File.open("./hadoop/conf/mapred-site.xml","w") do |f|
+  f.puts <<EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+ <property>
+   <name>mapred.job.tracker</name>
+   <value>#{c.master.instance_id}:9001</value>
+ </property>
+</configuration>
+EOF
+end
+
+
+# /home/hadoop/hadoop の rsync
+rsync_options="--exclude-from=./bin/rsync_exclude.txt -avzC -c --force --delete -e ssh"
+server = "hadoop@%s" % c.master.ipInfo?[0]["route_to"]
+dir = "/home/hadoop/hadoop"
+
+dest = "%s:%s" % [server,dir]
+
+exec("ssh %s rm /home/hadoop/.ssh/known_hosts" % [server,dir])
+exec("rsync %s ./ %s" % [rsync_options,dest])
+exec("ssh %s cp -v %s/bin/ssh_config.txt /home/hadoop/.ssh/config" % [server,dir])
+exec("ssh %s sudo cp -v %s/bin/hosts /etc/hosts" % [server,dir])
+exec("ssh %s sudo sh %s/bin/iptables" % [server,dir])
+exec('ssh %s "cd %s && ./bin/deploy-slaves"' % [server,dir])
+
+# stop / start
+exec("ssh %s %s/hadoop/bin/stop-dfs.sh" % [server,dir])
+exec("ssh %s %s/hadoop/bin/stop-mapred.sh" % [server,dir])
+exec("ssh %s rm -rf /tmp/hadoop-*" % [server,dir])
+exec("ssh %s %s/hadoop/bin/slaves.sh rm -rf /tmp/hadoop-*" % [server,dir])
+exec("ssh %s %s/hadoop/bin/hadoop namenode -format" % [server,dir])
+exec("ssh %s %s/hadoop/bin/start-dfs.sh" % [server,dir])
+exec("ssh %s %s/hadoop/bin/start-mapred.sh" % [server,dir])
+
+
+
+

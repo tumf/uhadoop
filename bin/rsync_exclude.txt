@@ -1,0 +1,11 @@
+.DS_Store
+.svn
+*.orig
+*.bak
+.git
+hadoop-0.20.2/src
+hadoop-0.20.2/docs
+output
+input
+logs/*
+
