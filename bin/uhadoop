@@ -3,22 +3,19 @@
 
 =begin
 Usage: uhadoop [-c <num>] <server-group>
-uhadoop -c 10 tumf-sg-13
+uhadoop tumf-sg-13 jar ./hadoop/contrib/streaming/hadoop-0.20.2-streaming.jar \
+    -input input -output output -mapper './bin/mapper' -reducer './bin/reducer'
+
 =end
+require 'bin/cluster_manager.rb'
 
 HADOOP_VERSION="0.20.2"
+group = ARGV.shift
 
-system("./bin/deploy")
+c = ClusterManger.new(group)
+#puts("ssh hadoop@%s \"cd hadoop && ./hadoop/bin/hadoop %s\"" % [c.master.ipInfo?[0]["route_to"], ARGV.join(" ")])
+system("ssh hadoop@%s \"cd hadoop && ./hadoop/bin/hadoop %s\"" % [c.master.ipInfo?[0]["route_to"], ARGV.join(" ")])
 
-# 分散ファイルシステムを初期化
-# bin/hadoop namenode -format 
-# bin/hadoop fs -put data data
-# bin/start-all.sh # デーモンを起動
-system("./bin/hadoop " <<
-       " jar contrib/streaming/hadoop-#{HADOOP_VERSION}-streaming.jar" <<
-       " -input input -output output" <<
-       " -mapper './bin/mapper'" <<
-       " -reducer './bin/reducer'")
 
-system("./bin/hadoop fs -cat output/*")
+
 

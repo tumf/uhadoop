@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-require 'unit_hosting'
-
-use_clusters = 8
+=begin
+Usage: ./bin/deploy <server-group> <clusters>
+e.g. ./bin/deploy tumf-sg-10 4
+=end
+require 'bin/cluster_manager.rb'
 
 def exec cmd
   puts cmd
@@ -10,37 +12,12 @@ def exec cmd
 end
 
 
-class ClusterManger
-  attr_reader :nodes, :master, :slave, :clusters, :slaves, :group
-  def clear_vars
-    @nodes = nil
-    @master = nil
-    @slave = nil
-    @clusters = Array.new
-    @slaves = Array.new
-  end
-  def initialize server_group
-    @group = UnitHosting::VmGroup.load(server_group)
-    update
-  end
-  def update
-    @vms = @group.vms
-    clear_vars
-    @vms.each do |instance_id,vm|
-      @master = vm if vm.display_name == "master"
-      @slave = vm if vm.display_name == "slave"
-      @clusters << vm if vm.display_name == "slave-cluster"
-    end
-    @slaves = @clusters.clone
-    @slaves << slave
-    @nodes = @slaves.clone
-    @nodes << @master
-  end
-end
 
 $stdout.sync=(true) if not $stdout.sync
 
-c = ClusterManger.new('tumf-sg-13')
+group = ARGV.shift
+use_clusters = ARGV.shift
+c = ClusterManger.new(group)
 puts "use %d clusters"  % use_clusters
 puts "found %d clusters..." % c.slaves.length
 
