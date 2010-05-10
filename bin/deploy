@@ -1,23 +1,29 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-=begin
-Usage: ./bin/deploy <server-group> <clusters>
-e.g. ./bin/deploy tumf-sg-10 4
-=end
-require 'bin/cluster_manager.rb'
+require "unit_hosting/hadoop/cluster_manager"
 
 def exec cmd
   puts cmd
   system(cmd)
 end
+def usage
+  "Usage: %s <server-group> <clusters>" % $0 <<
+    "\n e.g. %s tumf-sg-10 4" % $0
+end
+def die str
+  puts str
+  exit 255
+end
 
-
+die usage unless ARGV.length >= 1
 
 $stdout.sync=(true) if not $stdout.sync
-
+use_clusters = 1
 group = ARGV.shift
-use_clusters = ARGV.shift
-c = ClusterManger.new(group)
+use_clusters = ARGV.shift.to_i if ARGV.length > 0
+
+c = UnitHosting::Hadoop::ClusterManger.new(group)
+
 puts "use %d clusters"  % use_clusters
 puts "found %d clusters..." % c.slaves.length
 
