@@ -1,21 +1,28 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-
 =begin
-Usage: uhadoop [-c <num>] <server-group>
+
 uhadoop tumf-sg-13 jar ./hadoop/contrib/streaming/hadoop-0.20.2-streaming.jar \
     -input input -output output -mapper './bin/mapper' -reducer './bin/reducer'
 
 =end
-require 'bin/cluster_manager.rb'
+require 'unit_hosting/hadoop/cluster_manager'
+
+def usage
+  "Usage: %s <server-group> <hadoop-command>" % $0
+end
+def die str
+  puts str
+  exit 255
+end
 
 HADOOP_VERSION="0.20.2"
+die usage unless ARGV.length >= 2
+
 group = ARGV.shift
 
 c = ClusterManger.new(group)
-#puts("ssh hadoop@%s \"cd hadoop && ./hadoop/bin/hadoop %s\"" % [c.master.ipInfo?[0]["route_to"], ARGV.join(" ")])
-system("ssh hadoop@%s \"cd hadoop && ./hadoop/bin/hadoop %s\"" % [c.master.ipInfo?[0]["route_to"], ARGV.join(" ")])
-
-
-
+cmd = "ssh hadoop@%s \"cd hadoop && ./hadoop/bin/hadoop %s\"" %
+  [c.master.ipInfo?[0]["route_to"], ARGV.join(" ")]
+system(cmd)
 
