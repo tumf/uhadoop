@@ -1,8 +1,17 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 require 'unit_hosting'
+def usage
+  "Usage: %s <server-group>" % [$0]
+end
+def die str
+  puts str
+  exit 255
+end
 
-group = UnitHosting::VmGroup.load('tumf-sg-13')
+group_id = ARGV.shift
+
+group = UnitHosting::VmGroup.load(group_id)
 vms = group.vms
 # サーバのclone
 begin
