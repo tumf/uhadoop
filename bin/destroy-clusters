@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-require 'unit_hosting'
+require 'unit_hosting/vm_group'
+
 def usage
   "Usage: %s <server-group>" % [$0]
 end
@@ -8,6 +9,7 @@ def die str
   puts str
   exit 255
 end
+die usage unless ARGV.length >= 1
 
 group_id = ARGV.shift
 
