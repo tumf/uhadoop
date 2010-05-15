@@ -31,7 +31,14 @@ if c.slaves.length < use_clusters
   print "setup %d clusters" % (use_clusters - c.slaves.length)
   (use_clusters - c.slaves.length).times do
     putc "."
-    c.slave.replicate("slave-cluster")
+    attempts = 1
+    begin
+      c.slave.replicate("slave-cluster")
+    rescue Exception => e
+      attempts += 1       
+      puts "(retrying)"
+      retry 
+    end
   end
   puts "done"
   c.update
