@@ -21,7 +21,7 @@ die usage unless ARGV.length >= 2
 
 group = ARGV.shift
 
-c = ClusterManger.new(group)
+c = UnitHosting::Hadoop::ClusterManger.new(group)
 cmd = "ssh hadoop@%s \"cd hadoop && ./hadoop/bin/hadoop %s\"" %
   [c.master.ipInfo?[0]["route_to"], ARGV.join(" ")]
 system(cmd)
