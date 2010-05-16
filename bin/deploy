@@ -193,11 +193,11 @@ exec("ssh %s sudo sh %s/bin/iptables" % [server,dir])
 exec('ssh %s "cd %s && ./bin/deploy-slaves"' % [server,dir])
 
 # stop / start
-exec("ssh %s %s/hadoop/bin/stop-dfs.sh" % [server,dir])
-exec("ssh %s %s/hadoop/bin/stop-mapred.sh" % [server,dir])
-exec("ssh %s rm -rf /tmp/hadoop-*" % [server,dir])
-exec("ssh %s %s/hadoop/bin/slaves.sh rm -rf /tmp/hadoop-*" % [server,dir])
-exec("ssh %s %s/hadoop/bin/hadoop namenode -format" % [server,dir])
+# exec("ssh %s %s/hadoop/bin/stop-dfs.sh" % [server,dir])
+# exec("ssh %s %s/hadoop/bin/stop-mapred.sh" % [server,dir])
+# exec("ssh %s rm -rf /tmp/hadoop-*" % [server,dir])
+# exec("ssh %s %s/hadoop/bin/slaves.sh rm -rf /tmp/hadoop-*" % [server,dir])
+# exec("ssh %s %s/hadoop/bin/hadoop namenode -format" % [server,dir])
 exec("ssh %s %s/hadoop/bin/start-dfs.sh" % [server,dir])
 exec("ssh %s %s/hadoop/bin/start-mapred.sh" % [server,dir])
 
