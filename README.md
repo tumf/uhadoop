@@ -8,7 +8,7 @@ Copyright (C) 2010 Yoshihiro TAKAHARA
 
 `uhadoop`プロジェクトは、分散処理フレームワーク[Hadoop]を[UnitHosting]で利用するためのスクリプトを提供します。
 まず、ユーザはmasterとslaveの2種類のサーバを構築する必要があります。
-`uhadoop`スクリプトは`master`を`nameノード`として扱い、`slave`を必要数分コピーして`dataノード`として扱います。
+`uhadoop`スクリプトは`master`をnameノー`として扱い、`slave`を必要数分コピーしてdataノードとして扱います。
 
  **必要条件
  ruby 1.8以上
