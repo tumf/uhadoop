@@ -8,7 +8,7 @@ Copyright (C) 2010 Yoshihiro TAKAHARA
 
 `uhadoop`プロジェクトは、分散処理フレームワーク[Hadoop]を[UnitHosting]で利用するためのスクリプトを提供します。
 まず、ユーザはmasterとslaveの2種類のサーバを構築する必要があります。
-`uhadoop`スクリプトは`master`をnameノー`として扱い、`slave`を必要数分コピーしてdataノードとして扱います。
+`uhadoop`スクリプトは`master`を`nameノード`として扱い、`slave`を必要数分コピーして`dataノード`として扱います。
 
  **必要条件
  ruby 1.8以上
@@ -20,13 +20,13 @@ Copyright (C) 2010 Yoshihiro TAKAHARA
 
 ### ruby APIライブラリのインストール
 
-[bash]
-gem install unit_hosting
+    [bash]
+    gem install unit_hosting
 
 ### uhadoopのインストール
 
-[bash]
-git clone http://www.github.com/tumf/uhadoop/master
+    [bash]
+    git clone http://www.github.com/tumf/uhadoop/master
 
 ### ユニットホスティングへ登録
 
@@ -60,8 +60,9 @@ iptablesを設定します。
 hdfsを初期化します。
 
 また、以下のファイルが自動で修正されます。
- * /etc/hosts
- * /home/hadoop/.ssh/config
+
+* /etc/hosts
+* /home/hadoop/.ssh/config
 
 
 4. 実行
